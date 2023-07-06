@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { observer } from 'mobx-react';
 import { makeAutoObservable} from 'mobx';
+import {List} from 'antd';
 type Item={ 
     key: number | string;
     value: string;
@@ -37,9 +38,16 @@ const Counter=observer(()=>
     return(
         <div>
             <h1>Счётчик: {counterStore.count}</h1>
-            <button onClick={()=>counterStore.increment()}>+</button>
-            <button onClick={()=>counterStore.decrement()}>-</button>
-        </div>
+            <List
+            dataSource={counterStore.items}
+            renderItem={(item:Item)=>(
+                <List.Item>
+                    {item.key},
+                    {item.value}
+                </List.Item>
+            )}
+            />
+           </div>
     );
 });
 export default Counter;
