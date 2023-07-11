@@ -11,10 +11,6 @@ counter.module.css
     text-decoration: line-through;
   }
   
-  .item.completed {
-    text-decoration: line-through;
-  }
-  
   .deleteButton {
     visibility: visible;
   }
