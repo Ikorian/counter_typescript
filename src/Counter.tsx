@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { observer } from 'mobx-react';
 import { makeAutoObservable } from 'mobx';
 import { List, Input, Button } from 'antd';
+import styles from './counter.module.css';
 
 type Item = {
   key: number | string;
   value: string;
+  isDeleted: boolean;
 };
 
 class CounterStore {
@@ -16,16 +18,16 @@ class CounterStore {
   constructor() {
     makeAutoObservable(this);
     this.items = [
-      { key: 1, value: '1' },
-      { key: 2, value: '2' },
-      { key: 3, value: '3' },
-      { key: 4, value: '4' },
-      { key: 5, value: '5' },
-      { key: 6, value: '6' },
-      { key: 7, value: '7' },
-      { key: 8, value: '8' },
-      { key: 9, value: '9' },
-      { key: 10, value: '10' },
+      { key: 1, value: '1', isDeleted: false },
+      { key: 2, value: '2', isDeleted: false },
+      { key: 3, value: '3', isDeleted: false },
+      { key: 4, value: '4', isDeleted: false },
+      { key: 5, value: '5', isDeleted: false },
+      { key: 6, value: '6', isDeleted: false },
+      { key: 7, value: '7', isDeleted: false },
+      { key: 8, value: '8', isDeleted: false },
+      { key: 9, value: '9', isDeleted: false },
+      { key: 10, value: '10', isDeleted: false },
     ];
   }
   increment() {
@@ -35,7 +37,19 @@ class CounterStore {
     this.count--;
   }
   addItem(value: string) {
-    this.items.push({ key: value, value });
+    this.items.push({ key: value, value, isDeleted: false });
+  }
+  deleteItem(key: number | string) {
+    const index = this.items.findIndex((item) => item.key === key);
+    if (index !== -1) {
+      this.items.splice(index, 1);
+    }
+  }
+  toggleItemDeleted(key: number | string) {
+    const index = this.items.findIndex((item) => item.key === key);
+    if (index !== -1) {
+      this.items[index].isDeleted = !this.items[index].isDeleted;
+    }
   }
 }
 const counterStore = new CounterStore();
@@ -50,6 +64,30 @@ const Counter = observer(() => {
   const handleAddItem = () => {
     counterStore.addItem(inputValue);
     setInputValue('');
+  };
+
+  const handleDeleteItem = (key: number | string) => {
+    counterStore.deleteItem(key);
+  };
+
+  const handleToggleItemDeleted = (key: number | string) => {
+    counterStore.toggleItemDeleted(key);
+  };
+
+  const getItemClassName = (isDeleted: boolean): string => {
+    let className = styles.item;
+    if (isDeleted) {
+      className += ` ${styles.deleted}`;
+    }
+    return className;
+  };
+
+  const getDeleteButtonClassName = (isDeleted: boolean): string => {
+    let className = styles.deleteButton;
+    if (isDeleted) {
+      className += ` ${styles.deleted}`;
+    }
+    return className;
   };
 
   return (
@@ -67,7 +105,19 @@ const Counter = observer(() => {
         bordered
         dataSource={counterStore.items}
         renderItem={(item: Item) => (
-          <List.Item style={{ border: '1px solid #ccc',  padding: '10px' }}>
+          <List.Item
+            className={getItemClassName(item.isDeleted)}
+            actions={[
+              <Button
+                type="default"
+                onClick={() => handleDeleteItem(item.key)}
+                className={getDeleteButtonClassName(item.isDeleted)}
+              >
+                Удалить
+              </Button>,
+            ]}
+            onClick={() => handleToggleItemDeleted(item.key)}
+          >
             {item.key},
             {item.value}
           </List.Item>
