@@ -8,51 +8,78 @@ import styles from './counter.module.css';
 type Item = {
   key: number | string;
   value: string;
-  isDeleted: boolean;
 };
 
 class CounterStore {
   items: Item[];
-  count: number = 0;
+  deletedKeys: Set<number | string>;
 
   constructor() {
     makeAutoObservable(this);
     this.items = [
-      { key: 1, value: '1', isDeleted: false },
-      { key: 2, value: '2', isDeleted: false },
-      { key: 3, value: '3', isDeleted: false },
-      { key: 4, value: '4', isDeleted: false },
-      { key: 5, value: '5', isDeleted: false },
-      { key: 6, value: '6', isDeleted: false },
-      { key: 7, value: '7', isDeleted: false },
-      { key: 8, value: '8', isDeleted: false },
-      { key: 9, value: '9', isDeleted: false },
-      { key: 10, value: '10', isDeleted: false },
+      { key: 1, value: '1' },
+      { key: 2, value: '2' },
+      { key: 3, value: '3' },
+      { key: 4, value: '4' },
+      { key: 5, value: '5' },
+      { key: 6, value: '6' },
+      { key: 7, value: '7' },
+      { key: 8, value: '8' },
+      { key: 9, value: '9' },
+      { key: 10, value: '10' },
     ];
+    this.deletedKeys = new Set();
   }
-  increment() {
-    this.count++;
+
+  toggleItemDeleted(key: number | string) {
+    if (this.deletedKeys.has(key)) {
+      this.deletedKeys.delete(key);
+    } else {
+      this.deletedKeys.add(key);
+      this.items = [...this.items]; // <- костыль
+    }
   }
-  decrement() {
-    this.count--;
-  }
+
   addItem(value: string) {
-    this.items.push({ key: value, value, isDeleted: false });
+    const newKey = this.items.length + 1;
+    this.items.push({ key: newKey, value });
   }
+
   deleteItem(key: number | string) {
     const index = this.items.findIndex((item) => item.key === key);
     if (index !== -1) {
       this.items.splice(index, 1);
-    }
-  }
-  toggleItemDeleted(key: number | string) {
-    const index = this.items.findIndex((item) => item.key === key);
-    if (index !== -1) {
-      this.items[index].isDeleted = !this.items[index].isDeleted;
+      this.deletedKeys.delete(key);
     }
   }
 }
+
 const counterStore = new CounterStore();
+
+type ListItemProps = {
+  item: Item;
+};
+
+const ListItem = observer(({ item }: ListItemProps) => {
+  const handleToggleItemDeleted = () => {
+    counterStore.toggleItemDeleted(item.key);
+  };
+
+  const isDeleted = counterStore.deletedKeys.has(item.key);
+  const itemClassName = isDeleted ? `${styles.item} ${styles.deleted}` : styles.item;
+  const deleteButtonClassName = isDeleted ? `${styles.deleteButton} ${styles.deleted}` : styles.deleteButton;
+
+  return (
+    <List.Item className={itemClassName} onClick={handleToggleItemDeleted}
+    actions={[ <Button type="default" onClick={() => counterStore.deleteItem(item.key)} className={deleteButtonClassName}>
+        Удалить
+      </Button>
+]}>
+      {item.key},
+      {item.value}
+    </List.Item>
+  );
+});
 
 const Counter = observer(() => {
   const [inputValue, setInputValue] = useState('');
@@ -64,30 +91,6 @@ const Counter = observer(() => {
   const handleAddItem = () => {
     counterStore.addItem(inputValue);
     setInputValue('');
-  };
-
-  const handleDeleteItem = (key: number | string) => {
-    counterStore.deleteItem(key);
-  };
-
-  const handleToggleItemDeleted = (key: number | string) => {
-    counterStore.toggleItemDeleted(key);
-  };
-
-  const getItemClassName = (isDeleted: boolean): string => {
-    let className = styles.item;
-    if (isDeleted) {
-      className += ` ${styles.deleted}`;
-    }
-    return className;
-  };
-
-  const getDeleteButtonClassName = (isDeleted: boolean): string => {
-    let className = styles.deleteButton;
-    if (isDeleted) {
-      className += ` ${styles.deleted}`;
-    }
-    return className;
   };
 
   return (
@@ -104,24 +107,7 @@ const Counter = observer(() => {
       <List
         bordered
         dataSource={counterStore.items}
-        renderItem={(item: Item) => (
-          <List.Item
-            className={getItemClassName(item.isDeleted)}
-            actions={[
-              <Button
-                type="default"
-                onClick={() => handleDeleteItem(item.key)}
-                className={getDeleteButtonClassName(item.isDeleted)}
-              >
-                Удалить
-              </Button>,
-            ]}
-            onClick={() => handleToggleItemDeleted(item.key)}
-          >
-            {item.key},
-            {item.value}
-          </List.Item>
-        )}
+        renderItem={(item: Item) => <ListItem item={item} />}
       />
     </div>
   );

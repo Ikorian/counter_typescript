@@ -10,6 +10,7 @@ counter.module.css
   .item.deleted {
     text-decoration: line-through;
   }
+
   
   .deleteButton {
     visibility: visible;
